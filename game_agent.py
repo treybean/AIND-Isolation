@@ -34,8 +34,7 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    return len(game.get_legal_moves(player))
 
 
 def custom_score_2(game, player):
@@ -212,8 +211,76 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        """
+        From AIMA psuedocode:
+
+        function MINIMAX-DECISION(state) returns an action
+            return arg max a is in ACTIONS(s) MIN-VALUE(RESULT(state, a))
+        """
+        actions = game.get_legal_moves()
+        return max(actions, key=lambda x: self._min_value(game.forecast_move(x), 1))
+
+
+    def _min_value(self, game, depth):
+        """
+        From AIMA psuedocode:
+
+        function MIN-VALUE(state) returns a utility value
+            if TERMINAL-TEST(state) then return UTILITY(state)
+            v = infinity
+            for each a in ACTIONS(state) do
+                v = MIN(v, MAX-VALUE(RESULT(state, a)))
+            return v
+        """
+        if self._terminal_test(game, depth):
+            return self.score(game, self)
+        else:
+            v = float("inf")
+
+            for action in game.get_legal_moves():
+                v = min(v, self._max_value(game.forecast_move(action), depth + 1))
+
+            return v
+
+
+    def _max_value(self, game, depth):
+        """
+        From AIMA psuedocode:
+
+        function MAX-VALUE(state) returns a utility value
+            if TERMINAL-TEST(state) then return UTILITY(state)
+            v = -infinity
+            for each a in ACTIONS(state) do
+                v = MAX(v, MIN-VALUE(RESULT(state, a)))
+            return v
+        """
+        if self._terminal_test(game, depth):
+            return self.score(game, self)
+        else:
+            v = float("-inf")
+
+            for action in game.get_legal_moves():
+                v = max(v, self._min_value(game.forecast_move(action), depth + 1))
+
+            return v
+
+
+    def _terminal_test(self, game, depth):
+        """
+        Check if the depth is equal or greater than the search_depth of the
+        agent or if there are no legal moves.
+
+        Raise SearchTimeout if time_left is less than the TIMER_THRESHOLD.
+        """
+        out_of_time = self.time_left() < self.TIMER_THRESHOLD
+        beyond_search_depth = depth >= self.search_depth
+        no_legal_moves = len(game.get_legal_moves()) == 0
+
+        if out_of_time:
+            raise SearchTimeout()
+
+        return beyond_search_depth or no_legal_moves
+
 
 
 class AlphaBetaPlayer(IsolationPlayer):
