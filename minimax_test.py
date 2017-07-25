@@ -4,6 +4,8 @@ import unittest.mock as mock
 import isolation
 import game_agent
 
+from sample_players import open_move_score
+
 from importlib import reload
 
 
@@ -12,7 +14,7 @@ class MinimaxTest(unittest.TestCase):
 
     def setUp(self):
         reload(game_agent)
-        self.player1 = game_agent.MinimaxPlayer(search_depth=3)
+        self.player1 = game_agent.MinimaxPlayer(score_fn=open_move_score, search_depth=3)
         self.player2 = "Player2"
         self.game = isolation.Board(self.player1, self.player2)
 
@@ -32,7 +34,7 @@ class MinimaxTest(unittest.TestCase):
         self.assertEqual(best_move, (-1,-1))
 
     def test_minimax_scores_expected_number_of_nodes(self):
-        self.player1 = game_agent.MinimaxPlayer(search_depth=2)
+        self.player1 = game_agent.MinimaxPlayer(score_fn=open_move_score, search_depth=2)
         self.game = isolation.Board(self.player1, self.player2, width=9, height=9)
         self.game._board_state = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 32]
 
