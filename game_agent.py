@@ -219,7 +219,7 @@ class MinimaxPlayer(IsolationPlayer):
             return arg max a is in ACTIONS(s) MIN-VALUE(RESULT(state, a))
         """
         actions = game.get_legal_moves()
-        return max(actions, key=lambda x: self._min_value(game.forecast_move(x), 1))
+        return max(actions, key=lambda action: self._min_value(game.forecast_move(action), 1))
 
 
     def _min_value(self, game, depth):
@@ -322,8 +322,24 @@ class AlphaBetaPlayer(IsolationPlayer):
         """
         self.time_left = time_left
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        # Initialize the best move so that this function returns something
+        # in case the search fails due to timeout
+        best_move = (-1, -1)
+
+        try:
+            # The try/except block will automatically catch the exception
+            # raised when the timer is about to expire.
+            self.search_depth = 0
+
+            while True:
+                self.search_depth += 1
+                best_move = self.alphabeta(game, self.search_depth)
+
+        except SearchTimeout:
+            pass  # Handle any actions required after timeout as needed
+
+        # Return the best move from the last completed search iteration
+        return best_move
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf")):
         """Implement depth-limited minimax search with alpha-beta pruning as
@@ -373,5 +389,105 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        """
+        From AIMA psuedocode:
+
+        function ALPHA-BETA-SEARCH(state) returns an action
+            v = MAX-VALUE(state, -infinity, infinity)
+
+        return the action in ACTIONS(state) with value v
+        """
+
+        best_move = (-1, -1)
+
+        #sorting moves, to facilitate better testing
+        for action in sorted(game.get_legal_moves()):
+            v = self._min_value(game.forecast_move(action), alpha, beta, 1)
+
+            if v > alpha:
+                alpha = v
+                best_move = action
+
+        return best_move
+
+    def _max_value(self, game, alpha, beta, depth):
+        """
+        From AIMA psuedocode:
+
+        function MAX-VALUE(state, alpha, beta) returns a utility value
+            if TERMINAL-TEST(state) the return UTILITY(state)
+
+            v = -infinity
+
+            for each a in ACTIONS(state) do
+            v = MAX(v, MIN-VALUE(RESULT(state, a), alpha, beta))
+                if v >= beta then return v
+                alpha = MAX(alpha, v)
+            return v
+        """
+        if self._terminal_test(game, depth):
+            return self.score(game, self)
+        else:
+            v = float("-inf")
+
+            for action in game.get_legal_moves():
+                min_value = self._min_value(game.forecast_move(action), alpha, beta, depth + 1)
+
+                v = max(v, min_value)
+
+                if v >= beta:
+                    return v
+
+                alpha = max(alpha, v)
+
+            return v
+
+
+    def _min_value(self, game, alpha, beta, depth):
+        """
+        From AIMA psuedocode:
+
+        function MIN-VALUE(state, alpha, beta) returns a utility value
+            if TERMINAL-TEST(state) the return UTILITY(state)
+
+            v = infinity
+
+            for each a in ACTIONS(state) do
+                v = MIN(v, MAX-VALUE(RESULT(state, a), alpha, beta))
+                if v <= alpha then return v
+                beta = MIN(beta, v)
+
+            return v
+        """
+        if self._terminal_test(game, depth):
+            return self.score(game, self)
+        else:
+            v = float("inf")
+
+            for action in game.get_legal_moves():
+                max_value = self._max_value(game.forecast_move(action), alpha, beta, depth + 1)
+
+                v = min(v, max_value)
+
+                if v <= alpha:
+                    return v
+
+                beta = min(beta, v)
+
+            return v
+
+    def _terminal_test(self, game, depth):
+        """
+        Check if the depth is equal or greater than the search_depth of the
+        agent or if there are no legal moves.
+
+        Raise SearchTimeout if time_left is less than the TIMER_THRESHOLD.
+        """
+        out_of_time = self.time_left() < self.TIMER_THRESHOLD
+        beyond_search_depth = depth >= self.search_depth
+        no_legal_moves = len(game.get_legal_moves()) == 0
+
+        if out_of_time:
+            raise SearchTimeout()
+
+        return beyond_search_depth or no_legal_moves
